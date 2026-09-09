@@ -1,0 +1,1 @@
+export default function Home() { return <main style={{ fontFamily: 'Arial, sans-serif', maxWidth: 720, margin: '64px auto', padding: 24 }}><h1>Shefaa Remote MCP</h1><p>خادم MCP خاص بإدارة العيادات والأطباء. هذه الخدمة مخصصة للربط من Claude عبر OAuth.</p><p>نقطة الربط: <code>/api/mcp</code></p></main> }

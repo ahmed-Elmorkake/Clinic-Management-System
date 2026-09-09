@@ -1,0 +1,5 @@
+import { useState } from 'react'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { useForm } from 'react-hook-form'
+import { auth } from '../../firebase.js'
+export function ForgotPasswordPage() { const [notice, setNotice] = useState(''); const { register, handleSubmit, formState: { isSubmitting } } = useForm(); const submit = async ({ email }) => { try { await sendPasswordResetEmail(auth, email); setNotice('إذا كان البريد مسجلاً، أرسلنا إليه رابط استعادة كلمة المرور.') } catch { setNotice('إذا كان البريد مسجلاً، أرسلنا إليه رابط استعادة كلمة المرور.') } }; return <main className="auth-page"><form className="auth-card" onSubmit={handleSubmit(submit)}><a className="brand" href="/">✚ شفاء</a><h1>استعادة كلمة المرور</h1><p>أدخل بريدك وسنرسل رابطًا آمنًا لإعادة التعيين.</p><label>البريد الإلكتروني<input type="email" required autoComplete="email" {...register('email')} /></label><button className="primary" disabled={isSubmitting}>{isSubmitting ? 'جارٍ الإرسال…' : 'إرسال الرابط'}</button>{notice && <p className="alert">{notice}</p>}<a className="text-button" href="/login">العودة لتسجيل الدخول</a></form></main> }

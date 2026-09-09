@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "shefaa-clinic-manager": {
+      "command": "node",
+      "args": [
+        "D:\\files\\react\\secound\\mcp\\shefaa-clinic-mcp.mjs"
+      ],
+      "env": {
+        "FIREBASE_SERVICE_ACCOUNT_PATH": "D:\\files\\react\\secound\\secound-react-demo-2026-c63b9-firebase-adminsdk-fbsvc-4b16aee736.json"
+      }
+    }
+  }
+}

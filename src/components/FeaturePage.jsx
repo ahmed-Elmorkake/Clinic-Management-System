@@ -1,0 +1,2 @@
+import { useAuth } from '../features/auth/AuthContext.jsx'
+export function FeaturePage({ title, permission }) { const { can } = useAuth(); if (permission && !can(permission)) return <section className="empty-state"><h1>غير مصرح لك بالوصول</h1><p>لا تملك الصلاحية اللازمة لعرض هذه الصفحة.</p></section>; return <section className="empty-state"><h1>{title}</h1><p>ستظهر بياناتك هنا فور إضافتها إلى العيادة.</p></section> }

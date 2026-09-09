@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function active() { return signedIn() && profile().isActive == true; }
+    function isSuperAdmin() { return active() && profile().role == 'super_admin'; }
+    function isPatient() { return active() && profile().role == 'patient'; }
+    function sameClinic(data) { return active() && profile().clinicId != null && profile().clinicId == data.clinicId; }
+    function operationalStaff() { return active() && profile().role in ['super_admin', 'clinic_admin', 'doctor', 'receptionist']; }
+    function clinicalStaff() { return active() && profile().role in ['super_admin', 'clinic_admin', 'doctor']; }
+    function ownsPatient(data) { return active() && data.userId == request.auth.uid; }
+    function doctorForBooking() { return get(/databases/$(database)/documents/doctors/$(request.resource.data.doctorId)); }
+    match /users/{uid} {
+      allow read: if signedIn() && (uid == request.auth.uid || isSuperAdmin());
+      allow create: if (signedIn() && uid == request.auth.uid && request.resource.data.keys().hasOnly(['uid','email','displayName','phone','dateOfBirth','gender','role','isActive','createdAt','updatedAt']) && request.resource.data.uid == request.auth.uid && request.resource.data.role == 'patient' && request.resource.data.isActive == true) || (isSuperAdmin() && request.resource.data.uid == uid && request.resource.data.role == 'doctor' && request.resource.data.isActive == true && request.resource.data.keys().hasOnly(['uid','email','displayName','fullName','role','clinicId','isActive','isProfileComplete','createdAt','updatedAt']));
+      allow update: if active() && uid == request.auth.uid && request.resource.data.role == resource.data.role && request.resource.data.uid == resource.data.uid && request.resource.data.email == resource.data.email && request.resource.data.isActive == resource.data.isActive && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['clinicId','branchId','permissions']);
+      allow delete: if false;
+    }
+    match /doctors/{doctorId} {
+      allow read: if active();
+      allow create: if isSuperAdmin() && request.resource.data.userId == doctorId && request.resource.data.keys().hasOnly(['userId','fullName','specialty','clinicId','bio','fee','consultationDuration','workingHours','isProfileComplete','createdAt','updatedAt']);
+      allow delete: if false;
+      allow update: if active() && profile().role == 'doctor' && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.fullName == resource.data.fullName && request.resource.data.specialty == resource.data.specialty && request.resource.data.clinicId == resource.data.clinicId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bio','fee','consultationDuration','workingHours','isProfileComplete','updatedAt']);
+    }
+    match /availableSlots/{slotId} {
+      allow read: if active();
+      allow create: if active() && profile().role == 'doctor' && request.resource.data.doctorId == request.auth.uid && sameClinic(request.resource.data) && request.resource.data.status == 'available' && request.resource.data.keys().hasOnly(['doctorId','clinicId','date','timeSlot','status','createdAt']);
+      allow update: if isPatient() && resource.data.status == 'available' && request.resource.data.status == 'booked' && request.resource.data.doctorId == resource.data.doctorId && request.resource.data.clinicId == resource.data.clinicId && request.resource.data.date == resource.data.date && request.resource.data.timeSlot == resource.data.timeSlot && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','bookedAt']);
+      allow delete: if false;
+    }
+    match /patients/{patientId} {
+      allow read: if ownsPatient(resource.data) || (sameClinic(resource.data) && operationalStaff());
+      allow create: if (signedIn() && patientId == request.auth.uid && request.resource.data.keys().hasOnly(['userId','fullName','phone','dateOfBirth','gender','createdAt','updatedAt']) && request.resource.data.userId == request.auth.uid) || (sameClinic(request.resource.data) && operationalStaff() && request.resource.data.keys().hasOnly(['fullName','phone','gender','dateOfBirth','clinicId','branchId','createdAt','updatedAt','createdBy']) && request.resource.data.createdBy == request.auth.uid);
+      allow update: if (ownsPatient(resource.data) && request.resource.data.userId == resource.data.userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['clinicId','branchId','userId','createdBy'])) || (sameClinic(resource.data) && operationalStaff() && request.resource.data.clinicId == resource.data.clinicId && request.resource.data.createdBy == resource.data.createdBy);
+      allow delete: if false;
+    }
+    match /appointments/{id} {
+      allow read: if sameClinic(resource.data) || (active() && resource.data.patientId == request.auth.uid);
+      allow create: if isPatient() && request.resource.data.keys().hasOnly(['patientId','patientName','doctorId','doctorName','specialty','clinicId','date','timeSlot','status','createdAt']) && request.resource.data.patientId == request.auth.uid && request.resource.data.status == 'pending' && doctorForBooking().data.clinicId == request.resource.data.clinicId && doctorForBooking().data.fullName == request.resource.data.doctorName && doctorForBooking().data.specialty == request.resource.data.specialty;
+      allow update: if (active() && resource.data.patientId == request.auth.uid && request.resource.data.patientId == resource.data.patientId && request.resource.data.doctorId == resource.data.doctorId && request.resource.data.clinicId == resource.data.clinicId && request.resource.data.date == resource.data.date && request.resource.data.timeSlot == resource.data.timeSlot && request.resource.data.status == 'cancelled') || (sameClinic(resource.data) && sameClinic(request.resource.data) && operationalStaff() && request.resource.data.clinicId == resource.data.clinicId);
+      allow delete: if false;
+    }
+    match /medicalRecords/{id} { allow read: if sameClinic(resource.data) && clinicalStaff(); allow create: if sameClinic(request.resource.data) && profile().role == 'doctor'; allow update: if sameClinic(resource.data) && sameClinic(request.resource.data) && profile().role == 'doctor' && request.resource.data.clinicId == resource.data.clinicId && request.resource.data.patientId == resource.data.patientId && request.resource.data.doctorId == resource.data.doctorId && request.resource.data.appointmentId == resource.data.appointmentId; allow delete: if false; }
+    match /prescriptions/{id} { allow read: if (sameClinic(resource.data) && clinicalStaff()) || (active() && resource.data.patientId == request.auth.uid); allow create: if sameClinic(request.resource.data) && profile().role == 'doctor'; allow update: if sameClinic(resource.data) && sameClinic(request.resource.data) && profile().role == 'doctor' && request.resource.data.clinicId == resource.data.clinicId && request.resource.data.patientId == resource.data.patientId && request.resource.data.doctorId == resource.data.doctorId && request.resource.data.appointmentId == resource.data.appointmentId; allow delete: if false; }
+    match /auditLogs/{id} { allow read: if isSuperAdmin(); allow write: if false; }
+    match /clinics/{id} { allow read: if active() && (isSuperAdmin() || profile().clinicId == id); allow create: if isSuperAdmin() && request.resource.data.keys().hasOnly(['name','phone','email','address','status','createdAt','updatedAt']) && request.resource.data.status == 'active'; allow update, delete: if false; }
+  }
+}

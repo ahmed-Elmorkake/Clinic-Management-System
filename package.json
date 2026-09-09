@@ -11,6 +11,7 @@
     "create:super-admin": "node scripts/create-super-admin.mjs",
     "create:doctor": "node scripts/create-doctor.mjs",
     "mcp:clinic": "node mcp/shefaa-clinic-mcp.mjs",
+    "mcp:hash-admin-password": "node remote-mcp-vercel/scripts/hash-admin-password.mjs",
     "remove:demo-doctors": "node scripts/remove-demo-doctors.mjs"
   },
   "dependencies": {

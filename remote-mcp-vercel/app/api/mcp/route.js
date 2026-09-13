@@ -4,6 +4,8 @@ import { auth, db, FieldValue } from '../../../lib/firebase.js'
 import { asScopeList, verifyToken } from '../../../lib/oauth.js'
 import { config } from '../../../lib/config.js'
 
+export const runtime = 'nodejs'
+
 const text = (data) => ({ content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], structuredContent: data })
 const failure = (message) => ({ content: [{ type: 'text', text: message }], isError: true })
 const clean = (value) => value.trim()

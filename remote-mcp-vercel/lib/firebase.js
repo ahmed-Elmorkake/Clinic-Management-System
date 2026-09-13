@@ -3,7 +3,8 @@ import { getAuth } from 'firebase-admin/auth'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 
 const hasBase64Credential = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64)
-const rawCredential = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || (hasBase64Credential ? Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64, 'base64').toString('utf8') : '')
+const base64Credential = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64?.trim().replace(/^['"]|['"]$/g, '').replace(/\s+/g, '')
+const rawCredential = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || (hasBase64Credential ? Buffer.from(base64Credential, 'base64').toString('utf8') : '')
 if (!rawCredential) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 is required.')
 let credential
 try {

@@ -4,14 +4,14 @@ import { decodeClient, issueAuthorizationCode, passwordMatches, tokenId } from '
 import { formPage } from '../../../lib/response.js'
 
 const paramsFrom = async (request) => request.method === 'POST' ? Object.fromEntries((await request.formData()).entries()) : Object.fromEntries(new URL(request.url).searchParams.entries())
-const loginForm = (params, error = '') => formPage({ error, redirectUri: params.redirect_uri, state: params.state || '', clientId: params.client_id, codeChallenge: params.code_challenge, scope: params.scope || '' })
+const loginForm = (params, error = '') => formPage({ error, redirectUri: params.redirect_uri, state: params.state || '', clientId: params.client_id, codeChallenge: params.code_challenge, scope: params.scope || 'shefaa:manage' })
 const requestedScopes = (scope) => String(scope || '').split(/\s+/).filter(Boolean)
 
 const validate = async (params) => {
   if (params.response_type !== 'code' || !params.client_id || !params.redirect_uri || !params.code_challenge || params.code_challenge_method !== 'S256') throw new Error('طلب OAuth غير صالح.')
   const client = await decodeClient(params.client_id)
   if (!client.redirectUris.includes(params.redirect_uri)) throw new Error('رابط الرجوع غير مسموح لهذا العميل.')
-  if (!requestedScopes(params.scope).includes('shefaa:manage')) throw new Error('النطاق المطلوب غير مسموح.')
+  if (params.scope && !requestedScopes(params.scope).includes('shefaa:manage')) throw new Error('النطاق المطلوب غير مسموح.')
 }
 
 export const GET = async (request) => {

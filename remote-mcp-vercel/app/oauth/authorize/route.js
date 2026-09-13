@@ -8,7 +8,13 @@ const loginForm = (params, error = '') => formPage({ error, redirectUri: params.
 const requestedScopes = (scope) => String(scope || '').split(/\s+/).filter(Boolean)
 
 const validate = async (params) => {
-  if (params.response_type !== 'code' || !params.client_id || !params.redirect_uri || !params.code_challenge || params.code_challenge_method !== 'S256') throw new Error('طلب OAuth غير صالح.')
+  const responseType = String(params.response_type || 'code').trim().toLowerCase()
+  const challengeMethod = String(params.code_challenge_method || 'S256').trim().toUpperCase()
+  if (responseType !== 'code') throw new Error('OAuth response_type يجب أن يكون code.')
+  if (!params.client_id) throw new Error('OAuth client_id مفقود.')
+  if (!params.redirect_uri) throw new Error('OAuth redirect_uri مفقود.')
+  if (!params.code_challenge) throw new Error('OAuth code_challenge مفقود.')
+  if (challengeMethod !== 'S256') throw new Error('OAuth code_challenge_method يجب أن يكون S256.')
   const client = await decodeClient(params.client_id)
   if (!client.redirectUris.includes(params.redirect_uri)) throw new Error('رابط الرجوع غير مسموح لهذا العميل.')
   if (params.scope && !requestedScopes(params.scope).includes('shefaa:manage')) throw new Error('النطاق المطلوب غير مسموح.')

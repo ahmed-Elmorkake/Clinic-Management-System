@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "firebase-admin": "^14.3.0",
+    "firebase-admin": "13.5.0",
     "jose": "^5.10.0",
     "mcp-handler": "^1.0.0",
     "next": "^16.1.1",
